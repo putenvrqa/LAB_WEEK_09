@@ -19,10 +19,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
 import com.example.lab_week_09.ui.theme.OnBackgroundTitleText
@@ -55,10 +55,13 @@ private object Routes {
 @Composable
 fun AppNav(navController: NavHostController = rememberNavController()) {
     var student by remember { mutableStateOf(Student("")) }
-    val students = remember { mutableStateListOf(Student("Tanu"), Student("Tina"), Student("Tono")) }
+    val students = remember {
+        mutableStateListOf(Student("Tanu"), Student("Tina"), Student("Tono"))
+    }
 
     NavHost(navController = navController, startDestination = Routes.HOME) {
 
+        // HOME SCREEN
         composable(Routes.HOME) {
             HomeScreen(
                 student = student,
@@ -75,6 +78,7 @@ fun AppNav(navController: NavHostController = rememberNavController()) {
             )
         }
 
+        // LIST SCREEN
         composable(Routes.LIST) {
             StudentListScreen(
                 items = students,
@@ -83,6 +87,7 @@ fun AppNav(navController: NavHostController = rememberNavController()) {
             )
         }
 
+        // DETAIL SCREEN
         composable(
             route = Routes.DETAIL,
             arguments = listOf(navArgument("name") { type = NavType.StringType })
@@ -96,6 +101,7 @@ fun AppNav(navController: NavHostController = rememberNavController()) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     student: Student,
@@ -104,6 +110,9 @@ fun HomeScreen(
     onSubmitClick: () -> Unit,
     onFinishClick: () -> Unit
 ) {
+    var showError by remember { mutableStateOf(false) }
+    val canSubmit = student.name.trim().isNotEmpty()
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -117,8 +126,15 @@ fun HomeScreen(
 
             TextField(
                 value = student.name,
-                onValueChange = onNameChange,
+                onValueChange = {
+                    onNameChange(it)
+                    if (showError) showError = false
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                isError = showError,
+                supportingText = {
+                    if (showError) Text("Name cannot be empty")
+                },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -130,8 +146,15 @@ fun HomeScreen(
             ) {
                 PrimaryTextButton(
                     text = stringResource(id = R.string.button_click),
-                    onClick = onSubmitClick
+                    onClick = {
+                        if (canSubmit) {
+                            onSubmitClick()
+                        } else {
+                            showError = true
+                        }
+                    }
                 )
+
                 PrimaryTextButton(
                     text = "Finish",
                     onClick = onFinishClick
@@ -147,7 +170,9 @@ fun HomeScreen(
                     .padding(vertical = 4.dp)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
-            ) { Text(text = s.name, style = MaterialTheme.typography.bodyLarge) }
+            ) {
+                Text(text = s.name, style = MaterialTheme.typography.bodyLarge)
+            }
         }
     }
 }
@@ -221,6 +246,6 @@ fun StudentDetailScreen(name: String, onBack: () -> Unit) {
 
 @Preview(showBackground = true)
 @Composable
-fun PreviewPart4() {
+fun PreviewPart4Assignment() {
     LAB_WEEK_09Theme { AppNav() }
 }
