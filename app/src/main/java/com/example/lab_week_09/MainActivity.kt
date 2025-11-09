@@ -9,8 +9,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -26,7 +31,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.lab_week_09.ui.theme.LAB_WEEK_09Theme
+import com.example.lab_week_09.ui.theme.OnBackgroundTitleText
+import com.example.lab_week_09.ui.theme.PrimaryTextButton
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,87 +48,121 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Home()   // Part 2: tidak kirim list statis
+                    AppNav()
                 }
             }
         }
     }
 }
 
-data class Student(
-    var name: String
-)
+data class Student(var name: String)
 
-@Composable
-fun Home() {
-    var student by remember { mutableStateOf(Student("")) }
-
-    val students = remember {
-        mutableStateListOf(
-            Student("Tanu"),
-            Student("Tina"),
-            Student("Tono")
-        )
-    }
-
-    val onSubmit = {
-        val trimmed = student.name.trim()
-        if (trimmed.isNotEmpty()) {
-            students.add(Student(trimmed))
-            student = Student("")
-        }
-    }
-
-    HomeContent(
-        student = student,
-        onNameChange = { student = student.copy(name = it) },
-        onSubmitClick = onSubmit,
-        items = students
-    )
+private object Routes {
+    const val HOME = "home"
+    const val LIST = "list"
 }
 
 @Composable
-fun HomeContent(
+fun AppNav(navController: NavHostController = rememberNavController()) {
+    var student by remember { mutableStateOf(Student("")) }
+    val students = remember { mutableStateListOf(Student("Tanu"), Student("Tina"), Student("Tono")) }
+
+    NavHost(
+        navController = navController,
+        startDestination = Routes.HOME
+    ) {
+        composable(Routes.HOME) {
+            HomeScreen(
+                student = student,
+                onNameChange = { student = student.copy(name = it) },
+                onSubmitClick = {
+                    val t = student.name.trim()
+                    if (t.isNotEmpty()) {
+                        students.add(Student(t))
+                        student = Student("")
+                        navController.navigate(Routes.LIST)
+                    }
+                }
+            )
+        }
+        composable(Routes.LIST) {
+            StudentListScreen(
+                items = students,
+                onBack = { navController.popBackStack() }
+            )
+        }
+    }
+}
+
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun HomeScreen(
     student: Student,
     onNameChange: (String) -> Unit,
     onSubmitClick: () -> Unit,
-    items: List<Student>,
 ) {
-    LazyColumn {
-        item {
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(text = stringResource(id = R.string.enter_item))
-
-                TextField(
-                    value = student.name,
-                    onValueChange = onNameChange,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text
-                    )
-                )
-
-                Button(
-                    onClick = onSubmitClick,
-                    modifier = Modifier.padding(top = 8.dp)
+    Scaffold(
+        topBar = { CenterAlignedTopAppBar(title = { Text("Week 9 - Home") }) }
+    ) { inner ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(inner)
+        ) {
+            item {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(text = stringResource(id = R.string.button_click))
+                    OnBackgroundTitleText(text = stringResource(id = R.string.enter_item))
+
+                    TextField(
+                        value = student.name,
+                        onValueChange = onNameChange,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+                    )
+
+                    PrimaryTextButton(
+                        text = stringResource(id = R.string.button_click),
+                        onClick = onSubmitClick
+                    )
                 }
             }
         }
+    }
+}
 
-        items(items) { s ->
-            Column(
-                modifier = Modifier
-                    .padding(vertical = 4.dp)
-                    .fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(text = s.name)
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+fun StudentListScreen(items: List<Student>, onBack: () -> Unit) {
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Student List") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { inner ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(inner)
+        ) {
+            items(items) { s ->
+                Column(
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)
+                        .fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = s.name, style = MaterialTheme.typography.titleMedium)
+                }
             }
         }
     }
@@ -125,6 +170,6 @@ fun HomeContent(
 
 @Preview(showBackground = true)
 @Composable
-fun PreviewHomePart2() {
-    LAB_WEEK_09Theme { Home() }
+fun PreviewPart3() {
+    LAB_WEEK_09Theme { AppNav() }
 }

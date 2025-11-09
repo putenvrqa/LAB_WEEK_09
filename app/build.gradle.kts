@@ -40,7 +40,11 @@ android {
 }
 
 dependencies {
+    implementation(platform("androidx.compose:compose-bom:2025.11.00"))
+    implementation("androidx.navigation:navigation-compose:2.9.6")
     implementation("androidx.compose.material3:material3:1.4.0")
+    implementation("androidx.compose.foundation:foundation")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
